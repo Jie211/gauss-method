@@ -24,23 +24,34 @@ int gauss(double **adim, double *xsol, double *bvec, double epsln, int ndata, do
   int pivot_A, pivot_B;
   double pivot_abs;
   double wrk3=0.0;
+  double *wrk4;
+  wrk4=(double *)malloc(sizeof(double)*ndata);
+
+  for(i=0;i<ndata;i++){
+    wrk2[i]=bvec[i];
+    wrk4[i]=0.0;
+    for(j=0;j<ndata;j++){
+      wrk1[i][j]=adim[i][j];
+    }
+  }
   
   for(i=1;i<ndata;i++){
-    if(adim[i][i]==0.0){
+    if(wrk1[i][i]==0.0){
       printf("matrix[%d][%d]=0.0\n", i,i);
+      free(wrk4);
       return 1;
     }
     //pivot select
-    pivot_abs=fabs(adim[i][i]);
+    pivot_abs=fabs(wrk1[i][i]);
     pivot_A=i;
     for(j=i-1;j<ndata;j++){
-      if(fabs(adim[j][i]) > pivot_abs){
-        pivot_abs=fabs(adim[i][j]);
+      if(fabs(wrk1[j][i]) > pivot_abs){
+        pivot_abs=fabs(wrk1[i][j]);
         pivot_B=j;
         for(k=0;k<ndata;k++){
-          wrk2[k]=adim[pivot_B][k];
-          adim[pivot_B][k]=adim[pivot_A][k];
-          adim[pivot_A][k]=wrk2[k];
+          wrk4[k]=wrk1[pivot_B][k];
+          wrk1[pivot_B][k]=wrk1[pivot_A][k];
+          wrk1[pivot_A][k]=wrk4[k];
         }
         wrk3=bvec[pivot_B];
         bvec[pivot_B]=bvec[pivot_A];
@@ -48,25 +59,25 @@ int gauss(double **adim, double *xsol, double *bvec, double epsln, int ndata, do
       }
     }
     for(j=i;j<ndata;j++){
-      wrk3=adim[j][i-1] / adim[i-1][i-1];
+      wrk3=wrk1[j][i-1] / wrk1[i-1][i-1];
       for(k=0;k<ndata;k++){
-        adim[j][k]-=adim[i-1][k]*wrk3;
+        wrk1[j][k]-=wrk1[i-1][k]*wrk3;
       }
       bvec[j]-=bvec[i-1]*wrk3;
     }
   }
   for(i=ndata-1;i>=0;i--){
     if(i==ndata){
-      xsol[i]=bvec[i]/adim[i][i];
+      xsol[i]=bvec[i]/wrk1[i][i];
     }
     if(i!=ndata){
       wrk3=bvec[i];
       for(j=ndata;j>i;j--){
-        wrk3-=adim[i][j]*xsol[j];
+        wrk3-=wrk1[i][j]*xsol[j];
       }
-      xsol[i]=wrk3/adim[i][i];
+      xsol[i]=wrk3/wrk1[i][i];
     }
   }
-
+  free(wrk4);
   return 0;
 }
